@@ -1,34 +1,23 @@
-import SinglyLinkedList from "../Linked-List/SinglyLinkedList.js";
-
 export default class doublylinkedlist {
   constructor() {
-    this.list = new SinglyLinkedList();
+    this.head = null;
+    this.tail = null;
     this.length = 0;
-  }
-
-  // Kompatible "egenskaber" for head/tail (beregnes fra singly-listen)
-  get head() {
-    return this.list.getFirstNode();
-  }
-  get tail() {
-    return this.list.getLastNode();
   }
 
   printList() {
     let i = 0;
-    let prev = null;
-    let node = this.list.getFirstNode();
+    let node = this.head;
     console.log("DoubledLinkedList");
     while (node) {
       console.log(
         `[${i}] data=`,
         node.data,
         " prev=",
-        prev ? "(node)" : null,
+        node.prev ? "(node)" : null,
         " next=",
         node.next ? "(node)" : null
       );
-      prev = node;
       node = node.next;
       i++;
     }
@@ -38,70 +27,140 @@ export default class doublylinkedlist {
   // Data metoder
 
   addLast(data) {
-    this.list.add(data);
+    const newNode = { data, next: null, prev: this.tail };
+
+    if (!this.head) {
+      this.head = newNode;
+      this.tail = newNode;
+    } else {
+      this.tail.next = newNode;
+      this.tail = newNode;
+    }
+
     this.length++;
     return data;
   }
 
   addFirst(data) {
-    this.list.head = { data, next: this.list.head };
+    const newNode = { data, next: this.head, prev: null };
+
+    if (!this.head) {
+      this.head = newNode;
+      this.tail = newNode;
+    } else {
+      this.head.prev = newNode;
+      this.head = newNode;
+    }
+
     this.length++;
     return data;
   }
 
   get(index) {
-    return this.list.get(index);
+    let node = this.getNode(index);
+    return node ? node.data : null;
   }
 
   getFirst() {
-    return this.list.getFirst();
+    return this.head ? this.head.data : null;
   }
 
   getLast() {
-    return this.list.getLast();
+    return this.tail ? this.tail.data : null;
   }
 
   set(index, data) {
-    return this.list.set(index, data);
+    let node = this.getNode(index);
+    if (node) {
+      node.data = data;
+      return data;
+    }
+    return null;
   }
 
   insert(index, data) {
-    this.list.insert(index, data);
+    if (index <= 0) return this.addFirst(data);
+    if (index >= this.length) return this.addLast(data);
+
+    let current = this.getNode(index);
+    const newNode = { data, next: current, prev: current.prev };
+
+    current.prev.next = newNode;
+    current.prev = newNode;
+
     this.length++;
     return data;
   }
 
   insertAfter(index, data) {
-    const node = this.list.getNode(index);
-    if (!node) return this.addLast(data);
-    this.list.insertAfter(node, data);
+    let current = this.getNode(index);
+    if (!current) return this.addLast(data);
+
+    const newNode = { data, next: current.next, prev: current };
+
+    if (current.next) {
+      current.next.prev = newNode;
+    } else {
+      this.tail = newNode;
+    }
+
+    current.next = newNode;
     this.length++;
     return data;
   }
 
   insertBefore(index, data) {
-    const node = this.list.getNode(index);
-    if (!node) return this.addFirst(data);
-    this.list.insertBefore(node, data);
+    let current = this.getNode(index);
+    if (!current) return this.addFirst(data);
+
+    const newNode = { data, next: current, prev: current.prev };
+
+    if (current.prev) {
+      current.prev.next = newNode;
+    } else {
+      this.head = newNode;
+    }
+
+    current.prev = newNode;
     this.length++;
     return data;
   }
 
   remove(index) {
-    const data = this.list.remove(index);
-    if (data !== null) this.length--;
-    return data;
+    let node = this.getNode(index);
+    if (!node) return null;
+    return this.removeNode(node);
   }
 
   removeFirst() {
-    const data = this.list.removeFirst();
-    if (data !== null) this.length--;
+    if (!this.head) return null;
+    const data = this.head.data;
+
+    if (this.head === this.tail) {
+      this.head = null;
+      this.tail = null;
+    } else {
+      this.head = this.head.next;
+      this.head.prev = null;
+    }
+
+    this.length--;
     return data;
   }
 
   removeLast() {
-    const data = this.list.removeLast();
-    if (data !== null) this.length--;
+    if (!this.tail) return null;
+    const data = this.tail.data;
+
+    if (this.head === this.tail) {
+      this.head = null;
+      this.tail = null;
+    } else {
+      this.tail = this.tail.prev;
+      this.tail.next = null;
+    }
+
+    this.length--;
     return data;
   }
 
@@ -110,22 +169,31 @@ export default class doublylinkedlist {
   }
 
   clear() {
-    this.list.clear();
+    this.head = null;
+    this.tail = null;
     this.length = 0;
   }
 
   // Nodes metoder
 
   getNode(index) {
-    return this.list.getNode(index);
+    if (index < 0 || index >= this.length) return null;
+
+    let i = 0;
+    let node = this.head;
+    while (node && i < index) {
+      node = node.next;
+      i++;
+    }
+    return node;
   }
 
   getFirstNode() {
-    return this.list.getFirstNode();
+    return this.head;
   }
 
   getLastNode() {
-    return this.list.getLastNode();
+    return this.tail;
   }
 
   getNextNode(node) {
@@ -133,65 +201,94 @@ export default class doublylinkedlist {
   }
 
   getPreviousNode(node) {
-    return this.list.getPreviousNode(node);
+    return node ? node.prev : null;
   }
 
   insertBeforeNode(node, data) {
-    const newNode = this.list.insertBefore(node, data);
-    if (newNode) this.length++;
+    if (!node) return null;
+
+    const newNode = { data, next: node, prev: node.prev };
+
+    if (node.prev) {
+      node.prev.next = newNode;
+    } else {
+      this.head = newNode;
+    }
+
+    node.prev = newNode;
+    this.length++;
     return newNode;
   }
 
   insertAfterNode(node, data) {
-    const newNode = this.list.insertAfter(node, data);
-    if (newNode) this.length++;
+    if (!node) return null;
+
+    const newNode = { data, next: node.next, prev: node };
+
+    if (node.next) {
+      node.next.prev = newNode;
+    } else {
+      this.tail = newNode;
+    }
+
+    node.next = newNode;
+    this.length++;
     return newNode;
   }
 
   removeNode(node) {
-    const data = this.list.removeNode(node);
-    if (data !== null) this.length--;
+    if (!node) return null;
+    const data = node.data;
+
+    if (node.prev) node.prev.next = node.next;
+    else this.head = node.next;
+
+    if (node.next) node.next.prev = node.prev;
+    else this.tail = node.prev;
+
+    this.length--;
     return data;
   }
 
   makeLast(node) {
-    if (!node || node === this.getLastNode()) return node;
+    if (!node || node === this.tail) return node;
 
-    // Frakobl node
-    if (node === this.list.head) {
-      this.list.head = node.next;
-    } else {
-      const prev = this.list.getPreviousNode(node);
-      if (!prev) return node;
-      prev.next = node.next;
-    }
+    if (node.prev) node.prev.next = node.next;
+    else this.head = node.next;
 
-    // Sæt som sidste
-    const tail = this.getLastNode();
-    if (tail) tail.next = node;
+    if (node.next) node.next.prev = node.prev;
+    else this.tail = node.prev;
+
     node.next = null;
+    node.prev = this.tail;
+    if (this.tail) this.tail.next = node;
+    this.tail = node;
+
     return node;
   }
 
   makeFirst(node) {
-    if (!node || node === this.list.head) return node;
+    if (!node || node === this.head) return node;
 
-    const prev = this.list.getPreviousNode(node);
-    if (!prev) return node;
+    if (node.prev) node.prev.next = node.next;
+    else this.head = node.next;
 
-    // Frakobl node fra nuværende placering
-    prev.next = node.next;
+    if (node.next) node.next.prev = node.prev;
+    else this.tail = node.prev;
 
-    // Sæt som første
-    node.next = this.list.head;
-    this.list.head = node;
+    node.prev = null;
+    node.next = this.head;
+    if (this.head) this.head.prev = node;
+    this.head = node;
+
     return node;
   }
 
   swap(nodeA, nodeB) {
     if (!nodeA || !nodeB || nodeA === nodeB) return;
-    const tmp = nodeA.data;
+
+    const tempData = nodeA.data;
     nodeA.data = nodeB.data;
-    nodeB.data = tmp;
+    nodeB.data = tempData;
   }
 }
