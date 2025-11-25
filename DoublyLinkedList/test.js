@@ -1,5 +1,5 @@
 import assert from "assert";
-import DoublyLinkedList from "./doublylinkedlist.js";
+import DoublyLinkedList from "./otherdoublelinkedlist.js";
 
 describe("DoublyLinkedList", function () {
   const data1 = "A";
