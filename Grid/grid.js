@@ -1,129 +1,103 @@
-
 export default class Grid {
   constructor(rows, cols) {
     this._rows = rows;
     this._cols = cols;
-
-    this._data = new Array(rows * cols).fill(undefined);
+    this._data = new Array(rows * cols);
   }
 
-
-  _inBounds(row, col) {
-    return (
-      Number.isInteger(row) &&
-      Number.isInteger(col) &&
-      row >= 0 && row < this._rows &&
-      col >= 0 && col < this._cols
-    );
-  }
-
-  _index(row, col) {
-    if (!this._inBounds(row, col)) return undefined;
-    return row * this._cols + col;
-  }
-
-  _cellOrUndefined(row, col) {
-    if (!this._inBounds(row, col)) return undefined;
-    return {
-      row,
-      col,
-      value: this.get({ row, col })
-    };
-  }
-
-
+  // Sætte og hente værdier
   set({ row, col }, value) {
-    const idx = this._index(row, col);
-    if (idx === undefined) return; // out-of-bounds: ignorer
-    this._data[idx] = value;
+    const index = this.indexFor({ row, col });
+    if (index === undefined) {
+      return undefined;
+    }
+    this._data[index] = value;
+    return value;
   }
 
   get({ row, col }) {
-    const idx = this._index(row, col);
-    if (idx === undefined) return undefined;
-    return this._data[idx];
+    const index = this.indexFor({ row, col });
+    if (index === undefined) {
+      return undefined;
+    }
+    return this._data[index];
   }
 
+  // Konvertering mellem (row, col) og index
   indexFor({ row, col }) {
-    return this._index(row, col); 
+    if (row > this.rows || col > this.cols || col < 0 || row < 0) {
+      return undefined;
+    }
+    return row * this._cols + col;
   }
 
   rowColFor(index) {
-    if (
-      !Number.isInteger(index) ||
-      index < 0 ||
-      index >= this._data.length
-    ) {
-      return undefined;
-    }
     const row = Math.floor(index / this._cols);
-    const col = index % this._cols;
+    const col = index - row * this._cols;
     return { row, col };
   }
 
+  // Naboer
   neighbours({ row, col }) {
-    const deltas = [
-      { dr: -1, dc: -1 },
-      { dr: -1, dc:  0 },
-      { dr: -1, dc:  1 },
-      { dr:  0, dc: -1 },
-      { dr:  0, dc:  1 },
-      { dr:  1, dc: -1 },
-      { dr:  1, dc:  0 },
-      { dr:  1, dc:  1 }
-    ];
-
-    const result = [];
-
-    for (const { dr, dc } of deltas) {
-      const r = row + dr;
-      const c = col + dc;
-      if (this._inBounds(r, c)) {
-        result.push({ row: r, col: c });
-      }
+        const coords = [];
+    if (this.indexFor({ row: row - 1, col }) !== undefined){
+        coords.push({ row: row - 1, col });
     }
-
-    return result;
+    if (this.indexFor({ row: row + 1, col }) !== undefined){
+        coords.push({ row: row + 1, col });
+    }
+    if (this.indexFor({ row, col: col - 1 }) !== undefined){
+        coords.push({ row, col: col - 1 });
+    }
+    if (this.indexFor({ row, col: col + 1 }) !== undefined){
+        coords.push({ row, col: col + 1 });
+    }
+    return coords;
   }
 
-  neighbourValues(pos) {
-    return this.neighbours(pos).map(({ row, col }) =>
-      this.get({ row, col })
-    );
+  neighbourValues({ row, col }) {
+    const values = [];
+    if (this.north({ row, col }) !== undefined){
+        values.push(this.north({ row, col }));
+    }
+    if (this.south({ row, col }) !== undefined){
+        values.push(this.south({ row, col }));
+    }
+    if (this.west({ row, col }) !== undefined){
+        values.push(this.west({ row, col }));
+    }
+    if (this.east({ row, col }) !== undefined){
+        values.push(this.east({ row, col }));
+    }
+    return values;
   }
 
-
+  // Navigation i grid – returnerer { row, col, value } eller undefined
   nextInRow({ row, col }) {
-    const c = col + 1;
-    return this._cellOrUndefined(row, c);
+    return this.get({ row, col: col + 1 });
   }
 
   nextInCol({ row, col }) {
-    const r = row + 1;
-    return this._cellOrUndefined(r, col);
+    return this.get({ row: row + 1, col });
   }
 
   north({ row, col }) {
-    const r = row - 1;
-    return this._cellOrUndefined(r, col);
+    return this.get({ row: row - 1, col });
   }
 
   south({ row, col }) {
-    const r = row + 1;
-    return this._cellOrUndefined(r, col);
+    return this.get({ row: row + 1, col });
   }
 
   west({ row, col }) {
-    const c = col - 1;
-    return this._cellOrUndefined(row, c);
+    return this.get({ row, col: col - 1 });
   }
 
   east({ row, col }) {
-    const c = col + 1;
-    return this._cellOrUndefined(row, c);
+    return this.get({ row, col: col + 1 });
   }
 
-
+  // Info om struktur
   rows() {
     return this._rows;
   }
@@ -133,10 +107,10 @@ export default class Grid {
   }
 
   size() {
-    return this._rows * this._cols;
+    return this._data.length;
   }
 
-
+  // Fyld hele griddet
   fill(value) {
     this._data.fill(value);
   }
