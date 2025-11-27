@@ -74,11 +74,11 @@ export default class Grid {
 
   // Navigation i grid – returnerer { row, col, value } eller undefined
   nextInRow({ row, col }) {
-    return this.get({ row, col: col + 1 });
+    return this.east({ row, col});
   }
 
   nextInCol({ row, col }) {
-    return this.get({ row: row + 1, col });
+    return this.south({ row, col });
   }
 
   north({ row, col }) {
